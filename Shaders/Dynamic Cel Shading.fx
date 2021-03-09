@@ -1,6 +1,6 @@
 /*
     Description : Dynamic Cel Shading for Reshade https://reshade.me/
-    Author      : tr6
+    Author      : tr6 (Tyler Ross)
     
     This shader is a modification of prod80's Correct Contrast
     and Matsilagi's Reshade port of the MMJCelShader originally
