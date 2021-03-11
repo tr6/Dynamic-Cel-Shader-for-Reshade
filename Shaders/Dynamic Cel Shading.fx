@@ -169,19 +169,6 @@ namespace pd80_correctcontrast
         ui_step = 1;
         ui_label = "Shading Levels [CelShader]";
         > = 3;
-        
-    uniform bool BlendTransition <
-        ui_label = "Enable Transition Blender";
-        > = false;
-        
-    uniform int BlendWidth <
-        ui_type = "drag";
-        ui_label = "Blend Width";
-        ui_tooltip = "Smaller equals wider";
-        ui_min = 1;
-        ui_max = 100;
-        ui_step = 1;
-        > = 10;
     
         uniform float userWhite <
         ui_category = "Shading Customization";
@@ -367,10 +354,6 @@ namespace pd80_correctcontrast
     if(cHSL.z > cHSLBlack.z && cHSL.z < cHSLWhite.z)
     {
         cHSL.z += (cHSL.z * cr - BrtModify);
-        
-        if (BlendTransition == true && ( (cHSLold.z > (cHSL.z - blendAmount)) && (cHSLold.z < cHSL.z + blendAmount))){
-            cHSL.z = cHSLold.z;
-        }
         
         
         cHSL.y *= SatModify;
