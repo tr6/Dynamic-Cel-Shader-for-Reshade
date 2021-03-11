@@ -1,6 +1,6 @@
 /*
     Description : Dynamic Cel Shading for Reshade https://reshade.me/
-    Author      : tr6 (Tyler Ross)
+    Author      : Tyler Ross
     
     This shader is a modification of prod80's Correct Contrast
     and Matsilagi's Reshade port of the MMJCelShader originally
@@ -169,6 +169,19 @@ namespace pd80_correctcontrast
         ui_step = 1;
         ui_label = "Shading Levels [CelShader]";
         > = 3;
+        
+    uniform bool BlendTransition <
+        ui_label = "Enable Transition Blender";
+        > = false;
+        
+    uniform int BlendWidth <
+        ui_type = "drag";
+        ui_label = "Blend Width";
+        ui_tooltip = "Smaller equals wider";
+        ui_min = 1;
+        ui_max = 100;
+        ui_step = 1;
+        > = 10;
     
         uniform float userWhite <
         ui_category = "Shading Customization";
@@ -322,6 +335,7 @@ namespace pd80_correctcontrast
 	float3 colorAdjust(float3 cRGB, float3 cHSLBlack, float3 cHSLWhite) 
 	{
     float3 cHSL = RGB2HSL(cRGB);
+    float3 cHSLold = cHSL;
 	
 	
 	if(SatControl == true){
@@ -346,9 +360,19 @@ namespace pd80_correctcontrast
     
     if (LumAdjust == true){
     
+    
+    float blendAmount;
+    blendAmount = cr/BlendWidth;
+    
     if(cHSL.z > cHSLBlack.z && cHSL.z < cHSLWhite.z)
     {
         cHSL.z += (cHSL.z * cr - BrtModify);
+        
+        if (BlendTransition == true && ( (cHSLold.z > (cHSL.z - blendAmount)) && (cHSLold.z < cHSL.z + blendAmount))){
+            cHSL.z = cHSLold.z;
+        }
+        
+        
         cHSL.y *= SatModify;
         
         if(cHSL.z > cHSLWhite.z)
