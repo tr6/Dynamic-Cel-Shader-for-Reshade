@@ -163,16 +163,7 @@ namespace pd80_correctcontrast
         ui_step = 0.01;
         ui_label = "Shader Strength";
         > = 0.50;
-    
-    uniform int ShdMode <
-        ui_type = "drag";
-        ui_min = 1;
-        ui_max = 3;
-        ui_step = 1;
-        ui_label = "Shading Mode";
-        ui_tooltip = "1 = Dynamic Value Scale, 2 = Static Value Scale, 3 = MMJ Shading Method (Dynamic)";
-        > = 1;
-    
+
     uniform int ShdLevels <
         ui_type = "drag";
         ui_min = 1;
