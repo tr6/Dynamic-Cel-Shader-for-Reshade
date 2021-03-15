@@ -7,8 +7,9 @@
     made for Retroarch.
     
     The shader scans for the overall whitepoint and blackpoint of the current frame
-    and uses those values as reference for compressing the luminance values of 
-    each individual pixel in order to mimic the banded look of cel shading.
+    and uses those values to create a dynamic value scale. The pixels are then adjusted
+    to conform to that value scale. Pixels are converted to the HSL color space for
+    processing and converted back to the RGB color space for final rendering.
     
     The shader has several customization options including saturation,
     number of shades/bands, shader strength, and outline strength.
@@ -241,7 +242,6 @@ namespace pd80_correctcontrast
         ui_label = "LumAdjust";
         ui_tooltip = "Debug: Controls Luminance Adjustment";
         > = true;
-        
 
 #define mod(x,y) (x-y*floor(x/y))
 
@@ -543,9 +543,6 @@ namespace pd80_correctcontrast
 	
         if (ShdWeight > 0){
         
-        
-            if(ShdMode == 1 || ShdMode == 3){
-        
             float3 minValue    = tex2D( samplerDS_1x1, float2( texcoord.x / 4.0f, texcoord.y )).xyz;
             float3 maxValue    = tex2D( samplerDS_1x1, float2(( texcoord.x + 2.0f ) / 4.0f, texcoord.y )).xyz;
             // Black/White Point Change
@@ -566,125 +563,7 @@ namespace pd80_correctcontrast
                        
         
  
-            
-            
-        
-        
-        
-            if(ShdMode == 1){
-                    float3 generateShades[16];
-                    float3 workingShades[16];
-                    
-                    
-                                        
-                    
-                    //fills rest of array of targeted shades up to whitepoint
-                    for (int j=0; j < (ShdLevels); j++){
-                    generateShades[j] = adjBlack + ((adjWhite - adjBlack) / (ShdLevels - 1) * j);
-                    generateShades[j] = RGB2HSL(generateShades[j]);
-                    }
-                    
-                    float3 cHSLColor = RGB2HSL(color.xyz);
-                    float3 cHSLold = cHSLColor;
-                    
-                    cHSLColor.y *= SatModify;
-                    if (SatControl == 1){
-                        cHSLColor.y = SatModify;
-                    }
-                    
-                    
-                    for (int j=0; j < (ShdLevels + 1); j++){
-                    workingShades[j] = adjBlack + ((adjWhite - adjBlack) / (ShdLevels) * j);
-                    workingShades[j] = RGB2HSL(workingShades[j]);
-                    }
-                    
-                    if(cHSLColor.z < workingShades[0].z){
-                        cHSLColor.z = cHSLBlack.z;
-                    }
-                    
-                    
-                    for (int j=0; j < (ShdLevels); j++){
-                        int k = j + 1;
-                        if ((cHSLColor.z > workingShades[j].z) && (cHSLColor.z < workingShades[k].z)){
-                            cHSLColor.z = generateShades[j].z;
-                        }     
-  
-                        if(crushWhite){
-                            if(cHSLColor.z > cHSLWhite.z) {cHSLColor.z = cHSLWhite.z;};
-                        }
-                        if((crushBlack)){
-                            if(cHSLColor.z < cHSLBlack.z) {cHSLColor.z = cHSLBlack.z;};
-                        }
-                    
-                    }
-                    
-                    if(SatAdjust == true){
-                        cHSLColor.y -= cHSLold.z - cHSLColor.z;
-                    }
-                    
-                    
-
-                    
-                    
-                    color.xyz = HSL2RGB(cHSLColor);
-                    
-                color = lerp((color2), (color), ShdWeight);
-                
-            }
-
-            if(ShdMode == 3){
-                color = lerp((color2), colorAdjust(color, cHSLBlack, cHSLWhite), ShdWeight);
-            }
-            
-            }
-            
-            if(ShdMode == 2){
-            
-                    float generateShades[16];
-                    float workingShades[16];
-                    
-                    float adjBlack = userBlack;
-                    float adjWhite = userWhite;
-                    
-                    
-                                        
-                    
-                    //fills rest of array of targeted shades up to whitepoint
-                    for (int j=0; j < (ShdLevels); j++){
-                        generateShades[j] = adjBlack + ((adjWhite - adjBlack) / (ShdLevels - 1) * j);
-                    //    generateShades[j] = RGB2HSL(generateShades[j]);
-                    }
-                    
-                    float3 cHSLColor = RGB2HSL(color.xyz);
-                    float3 cHSLold = cHSLColor;
-                    
-                    cHSLColor.y *= SatModify;
-                    if (SatControl == 1){
-                        cHSLColor.y = SatModify;
-                    }
-                    
-                    
-                    for (int j=0; j < (ShdLevels + 1); j++){
-                        workingShades[j] = adjBlack + ((adjWhite - adjBlack) / (ShdLevels) * j);
-                    }
-                    
-                    
-                    for (int j=0; j < (ShdLevels); j++){
-                        int k = j + 1;
-                        if ((cHSLColor.z > workingShades[j]) && (cHSLColor.z < workingShades[k])){
-                            cHSLColor.z = generateShades[j];
-                        }     
-                        
-                    }
-                
-                if(SatAdjust == true){
-                    cHSLColor.y -= cHSLold.z - cHSLColor.z;
-                }
-                
-                color.xyz = HSL2RGB(cHSLColor);
-                color = lerp((color2), (color), ShdWeight);
-            
-            }
+        color = lerp((color2), colorAdjust(color, cHSLBlack, cHSLWhite), ShdWeight);
             
         }
 
