@@ -7,5 +7,3 @@ The shader scans for the overall whitepoint and blackpoint of the current frame 
 The shader has several customization options including saturation, number of shades/bands, shader strength, and outline strength.
 
 Use the DX9 version of the shader for injecting into DirectX9 games. DirectX9 Reshade seems to have trouble with For loops.
-
-Demonstration images coming soon.
