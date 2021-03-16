@@ -225,19 +225,19 @@ namespace pd80_correctcontrast
         > = false;
 
 	uniform bool SatAdjust <
-        ui_category = "Experimnetal Toggles";
+        ui_category = "Experimental Toggles";
         ui_label = "SatAdjust";
-        ui_tooltip = "Adjusts saturation to match change in luminance";
+        ui_tooltip = "Attempts to adjust saturation to match change in luminance";
         > = false;
         
     uniform bool SatControl <
-        ui_category = "Experimnetal Toggles";
+        ui_category = "Experimental Toggles";
         ui_label = "SatControl";
         ui_tooltip = "Debug: Sets saturation of all pixels to the same user specified value";
         > = false;
         
     uniform bool LumAdjust <
-        ui_category = "Experimnetal Toggles";
+        ui_category = "Experimental Toggles";
         ui_label = "LumAdjust";
         ui_tooltip = "Debug: Controls Luminance Adjustment";
         > = true;
