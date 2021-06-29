@@ -152,7 +152,7 @@ namespace pd80_correctcontrast
         ui_step = 0.01;
         ui_label = "Outline Brightness";
         ui_tooltip = "Might overdarken image. Set to 1.00 to disable.";
-        > = 0.20;
+        > = 1.00;
 
     uniform float ShdWeight <
         ui_text = "----------------------------------------------";
@@ -170,7 +170,7 @@ namespace pd80_correctcontrast
         ui_step = 1;
         ui_label = "Shading Mode";
         ui_tooltip = "1 = Dynamic Value Scale, 2 = Static Value Scale, 3 = MMJ Shading Method (Dynamic)";
-        > = 1;
+        > = 2;
     
     uniform int ShdLevels <
         ui_type = "drag";
@@ -178,7 +178,25 @@ namespace pd80_correctcontrast
         ui_max = 16;
         ui_step = 1;
         ui_label = "Shading Levels [CelShader]";
-        > = 3;
+        > = 5;
+        
+    uniform int test <
+        //ui_category = "Experimental Toggles";
+        ui_category = "Shading Customization";
+        ui_label = "Shade Distribution";
+        ui_tooltip = "Debug: Alters Shade Distribution";
+        ui_type = "drag";
+        ui_min = 0;
+        ui_max = 1;
+        ui_step = 1;
+        > = 1; 
+        
+    uniform bool test2 <
+        //ui_category = "Experimental Toggles";
+        ui_category = "Shading Customization";
+        ui_label = "Avoid Darkening/Brightening";
+        ui_tooltip = "Debug: Prevents overdarkening/overbrightening past detected blackpoint/whitepoint";
+        > = true;
     
         uniform float userWhite <
         ui_category = "Shading Customization";
@@ -227,8 +245,8 @@ namespace pd80_correctcontrast
 	uniform bool SatAdjust <
         ui_category = "Experimental Toggles";
         ui_label = "SatAdjust";
-        ui_tooltip = "Attempts to adjust saturation to match change in luminance";
-        > = false;
+        ui_tooltip = "Adjusts saturation to match change in luminance";
+        > = true;
         
     uniform bool SatControl <
         ui_category = "Experimental Toggles";
@@ -241,7 +259,9 @@ namespace pd80_correctcontrast
         ui_label = "LumAdjust";
         ui_tooltip = "Debug: Controls Luminance Adjustment";
         > = true;
-        
+    
+    
+
 
 #define mod(x,y) (x-y*floor(x/y))
 
@@ -544,7 +564,7 @@ namespace pd80_correctcontrast
         if (ShdWeight > 0){
         
         
-            if(ShdMode == 1 || ShdMode == 3){
+            //if (test2 == true || ShdMode == 1 || ShdMode == 3){
         
             float3 minValue    = tex2D( samplerDS_1x1, float2( texcoord.x / 4.0f, texcoord.y )).xyz;
             float3 maxValue    = tex2D( samplerDS_1x1, float2(( texcoord.x + 2.0f ) / 4.0f, texcoord.y )).xyz;
@@ -565,6 +585,7 @@ namespace pd80_correctcontrast
             }
                        
         
+            //}
  
             
             
@@ -572,59 +593,80 @@ namespace pd80_correctcontrast
         
         
             if(ShdMode == 1){
-                    float3 generateShades[16];
-                    float3 workingShades[16];
+                float3 generateShades[16];
+                float3 workingShades[16];
                     
                     
-                                        
+  
                     
-                    //fills rest of array of targeted shades up to whitepoint
-                    for (int j=0; j < (ShdLevels); j++){
+                //fills rest of array of targeted shades up to whitepoint
+                for (int j=0; j < (ShdLevels); j++){
                     generateShades[j] = adjBlack + ((adjWhite - adjBlack) / (ShdLevels - 1) * j);
                     generateShades[j] = RGB2HSL(generateShades[j]);
-                    }
+                }
                     
-                    float3 cHSLColor = RGB2HSL(color.xyz);
-                    float3 cHSLold = cHSLColor;
+                float3 cHSLColor = RGB2HSL(color.xyz);
+                float3 cHSLold = cHSLColor;
                     
-                    cHSLColor.y *= SatModify;
-                    if (SatControl == 1){
-                        cHSLColor.y = SatModify;
-                    }
+                cHSLColor.y *= SatModify;
+                if (SatControl == 1){
+                    cHSLColor.y = SatModify;
+                }
                     
                     
-                    for (int j=0; j < (ShdLevels + 1); j++){
+                for (int j=0; j < (ShdLevels + 1); j++){
                     workingShades[j] = adjBlack + ((adjWhite - adjBlack) / (ShdLevels) * j);
                     workingShades[j] = RGB2HSL(workingShades[j]);
-                    }
+                }
                     
-                    if(cHSLColor.z < workingShades[0].z){
-                        cHSLColor.z = cHSLBlack.z;
-                    }
-                    
-                    
-                    for (int j=0; j < (ShdLevels); j++){
-                        int k = j + 1;
-                        if ((cHSLColor.z > workingShades[j].z) && (cHSLColor.z < workingShades[k].z)){
-                            cHSLColor.z = generateShades[j].z;
-                        }     
+                if (test == 0){    
+                for (int j=0; j < (ShdLevels); j++){
+                    int k = j + 1;
+                    if ((cHSLColor.z >= workingShades[j].z) && (cHSLColor.z < workingShades[k].z)){
+                        cHSLColor.z = generateShades[j].z;
+                    }     
   
-                        if(crushWhite){
-                            if(cHSLColor.z > cHSLWhite.z) {cHSLColor.z = cHSLWhite.z;};
+                    if(crushWhite){
+                        if(cHSLColor.z > userWhite){
+                        cHSLColor.z = userWhite;
                         }
-                        if((crushBlack)){
-                            if(cHSLColor.z < cHSLBlack.z) {cHSLColor.z = cHSLBlack.z;};
-                        }
+                    }    
                     
+                    if((crushBlack)){
+                        if(cHSLColor.z < userBlack){
+                        cHSLColor.z = userBlack;
+                        }
                     }
+                    
+                }
+                }
+                
+                
+                if (test == 1){
+                        for (int j=0; j < (ShdLevels - 1); j++){
+                            int k = j + 1;
+                            if ((cHSLColor.z > generateShades[j].z) && (cHSLColor.z < generateShades[k].z)){
+                                if(cHSLColor.z >= (generateShades[j].z + (generateShades[k].z - generateShades[j].z)/2))
+                                    cHSLColor.z = generateShades[k].z;
+                                else cHSLColor.z = generateShades[j].z;
+                                
+                            }     
+                        
+                        }
+                    }
+                    
                     
                     if(SatAdjust == true){
-                        cHSLColor.y -= cHSLold.z - cHSLColor.z;
+                    if (cHSLold.y > 0.00){
+                    cHSLColor.y -= cHSLold.z - cHSLColor.z;
+                    if (cHSLColor.y == 0)
+                        cHSLColor.y = 0.01;
                     }
-                    
+                }
+                
+                
                     
 
-                    
                     
                     color.xyz = HSL2RGB(cHSLColor);
                     
@@ -636,22 +678,29 @@ namespace pd80_correctcontrast
                 color = lerp((color2), colorAdjust(color, cHSLBlack, cHSLWhite), ShdWeight);
             }
             
-            }
+            
             
             if(ShdMode == 2){
             
                     float generateShades[16];
                     float workingShades[16];
                     
-                    float adjBlack = userBlack;
-                    float adjWhite = userWhite;
+                    float Black = 0.0;
+                    float White = 1.0;
                     
+                    
+                    if(ignoreBlack){
+                        Black = userBlack;
+                    }
+                    if(ignoreWhite){
+                        White = userWhite;
+                    }
                     
                                         
                     
                     //fills rest of array of targeted shades up to whitepoint
                     for (int j=0; j < (ShdLevels); j++){
-                        generateShades[j] = adjBlack + ((adjWhite - adjBlack) / (ShdLevels - 1) * j);
+                        generateShades[j] = Black + ((White - Black) / (ShdLevels - 1) * j);
                     //    generateShades[j] = RGB2HSL(generateShades[j]);
                     }
                     
@@ -665,20 +714,73 @@ namespace pd80_correctcontrast
                     
                     
                     for (int j=0; j < (ShdLevels + 1); j++){
-                        workingShades[j] = adjBlack + ((adjWhite - adjBlack) / (ShdLevels) * j);
+                        workingShades[j] = Black + ((White - Black) / (ShdLevels) * j);
                     }
                     
                     
-                    for (int j=0; j < (ShdLevels); j++){
-                        int k = j + 1;
-                        if ((cHSLColor.z > workingShades[j]) && (cHSLColor.z < workingShades[k])){
-                            cHSLColor.z = generateShades[j];
-                        }     
+                    if (test == 0){
+                        for (int j=0; j < (ShdLevels); j++){
+                            int k = j + 1;
+                            if ((cHSLColor.z >= workingShades[j]) && (cHSLColor.z < workingShades[k])){
+                                cHSLColor.z = generateShades[j];
+                            }     
                         
+                        }
                     }
+                    
+                    /*
+                    if (test == 1){
+                        int nextLightest = ShdLevels - 2;
+                        
+                        if (cHSLColor.z > 0.00 && cHSLColor.z < workingShades[1])
+                            cHSLColor.z = workingShades[1];
+                        if (cHSLColor.z > workingShades[nextLightest] && cHSLColor.z < 1.00)
+                            cHSLColor.z = workingShades[nextLightest];
+                    
+                    
+                        for (int j=0; j < (ShdLevels); j++){
+                            int k = j + 1;
+                            if ((cHSLColor.z >= workingShades[j]) && (cHSLColor.z < workingShades[k])){
+                                cHSLColor.z = generateShades[j];
+                            }                        
+                        }
+                    }
+                    */
+                    
+                    if (test == 1){
+                        for (int j=0; j < (ShdLevels - 1); j++){
+                            int k = j + 1;
+                            if ((cHSLColor.z > generateShades[j]) && (cHSLColor.z < generateShades[k])){
+                                if(cHSLColor.z >= (generateShades[j] + (generateShades[k] - generateShades[j])/2))
+                                    cHSLColor.z = generateShades[k];
+                                else cHSLColor.z = generateShades[j];
+                                
+                            }     
+                        
+                        }
+                    }
+                    
+                
+                if(test2){
+                
+                
+                if (cHSLColor.z < cHSLBlack.z){
+                    cHSLColor.z = cHSLBlack.z;
+                }
+                
+                if (cHSLColor.z > cHSLWhite.z){
+                    cHSLColor.z = cHSLWhite.z;
+                }
+                
+                }
+                
                 
                 if(SatAdjust == true){
+                    if (cHSLold.y > 0.00){
                     cHSLColor.y -= cHSLold.z - cHSLColor.z;
+                    if (cHSLColor.y == 0)
+                        cHSLColor.y = 0.01;
+                    }
                 }
                 
                 color.xyz = HSL2RGB(cHSLColor);
